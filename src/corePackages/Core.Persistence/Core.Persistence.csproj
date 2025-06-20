@@ -5,10 +5,5 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
   </PropertyGroup>
-<ItemGroup>
-  <Reference Include="Core.Persistence">
-<HintPath>/Users/ilkhan/IT/i-architecture/src/corePackages/Core.Persistence/bin/Debug/net8.0/Core.Persistence.dll</HintPath>
-  </Reference>
-</ItemGroup>
 
 </Project>
