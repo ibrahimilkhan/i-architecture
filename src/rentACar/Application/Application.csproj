@@ -6,4 +6,17 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <ItemGroup>
+    <Folder Include="Brands/Commands/Delete/" />
+    <Folder Include="Brands/Commands/Update/" />
+    <Folder Include="Brands/Constants/" />
+    <Folder Include="Brands/Profiles/" />
+    <Folder Include="Brands/Queries/" />
+    <Folder Include="Brands/Rules/" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="MediatR" Version="12.5.0" />
+  </ItemGroup>
+
 </Project>
