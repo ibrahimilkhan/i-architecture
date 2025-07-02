@@ -1,7 +1,9 @@
 using System.Linq.Expressions;
+using System.Reflection;
 using Core.Persistence.Dynamic;
 using Core.Persistence.Paging;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Query;
 
 namespace Core.Persistence.Repositories;
@@ -57,22 +59,46 @@ public class EfRepositoryBase<TEntity, TEntityId, TContext> : IAsyncRepository<T
         return entity;
     }
 
-    public Task<TEntity> DeleteRangeAsync(ICollection<TEntity> entities, bool permanent = false)
+    public async Task<ICollection<TEntity>> DeleteRangeAsync(ICollection<TEntity> entities, bool permanent = false)
+    {
+        await SetEntitiesAsDeletedAsync(entities, permanent);
+        await Context.SaveChangesAsync();
+
+        return entities;
+    }
+
+    public Task<TEntity> GetAsync(
+        Expression<Func<TEntity, bool>> predicate, 
+        Func<IQueryable<TEntity>, IIncludableQueryable<TEntity, object>> include = null, 
+        bool withDeleted = false, 
+        bool enableTracking = false, 
+        CancellationToken cancellationToken = default)
     {
         throw new NotImplementedException();
     }
 
-    public Task<TEntity> GetAsync(Expression<Func<TEntity, bool>> predicate, Func<IQueryable<TEntity>, IIncludableQueryable<TEntity, object>> include = null, bool withDeleted = false, bool enableTracking = false, CancellationToken cancellationToken = default)
+    public Task<Paginate<TEntity>> GetListAsync(
+        Expression<Func<TEntity, bool>>? predicate = null, 
+        Func<IQueryable<TEntity>, IOrderedQueryable<TEntity>>? orderBy = null, 
+        Func<IQueryable<TEntity>, IIncludableQueryable<TEntity, object>> include = null, 
+        int index = 0, 
+        int size = 10, 
+        bool withDeleted = false, 
+        bool enableTracking = true, 
+        CancellationToken cancellationToken = default)
     {
         throw new NotImplementedException();
     }
 
-    public Task<Paginate<TEntity>> GetListAsync(Expression<Func<TEntity, bool>>? predicate = null, Func<IQueryable<TEntity>, IOrderedQueryable<TEntity>>? orderBy = null, Func<IQueryable<TEntity>, IIncludableQueryable<TEntity, object>> include = null, int index = 0, int size = 10, bool withDeleted = false, bool enableTracking = true, CancellationToken cancellationToken = default)
-    {
-        throw new NotImplementedException();
-    }
-
-    public Task<Paginate<TEntity>> GetListDynamicAsync(DynamicQuery dynamic, Expression<Func<TEntity, bool>>? predicate = null, Func<IQueryable<TEntity>, IIncludableQueryable<TEntity, object>> include = null, int index = 0, int size = 10, bool withDeleted = false, bool enableTracking = true, CancellationToken cancellationToken = default)
+    public Task<Paginate<TEntity>> GetListDynamicAsync(
+        DynamicQuery dynamic, 
+        Expression<Func<TEntity, bool>>? predicate = null, 
+        Func<IQueryable<TEntity>, IIncludableQueryable<TEntity, object>> include = null, 
+        int index = 0, 
+        int size = 10, 
+        bool withDeleted = false, 
+        bool enableTracking = true, 
+        CancellationToken cancellationToken = default)
     {
         throw new NotImplementedException();
     }
@@ -82,15 +108,26 @@ public class EfRepositoryBase<TEntity, TEntityId, TContext> : IAsyncRepository<T
         throw new NotImplementedException();
     }
 
-    public Task<TEntity> UpdateAsync(TEntity entity)
+    public async Task<TEntity> UpdateAsync(TEntity entity)
     {
-        throw new NotImplementedException();
+        entity.UpdatedDate = DateTime.UtcNow;
+        Context.Update(entity);
+        await Context.SaveChangesAsync();
+
+        return entity;
     }
 
-    public Task<ICollection<TEntity>> UpdateRangeAsync(ICollection<TEntity> entities)
+    public async Task<ICollection<TEntity>> UpdateRangeAsync(ICollection<TEntity> entities)
     {
-        throw new NotImplementedException();
+        foreach (var entity in entities)
+            entity.UpdatedDate = DateTime.UtcNow;
+
+        Context.UpdateRange(entities);
+
+        await Context.SaveChangesAsync();
+        return entities;
     }
+
 
     protected async Task SetEntityAsDeletedAsync(TEntity entity, bool permanent)
     {
@@ -107,10 +144,58 @@ public class EfRepositoryBase<TEntity, TEntityId, TContext> : IAsyncRepository<T
 
     private async Task SetEntityAsSoftDeletedAsync(TEntity entity)
     {
-        if (entity.DeletedDate.HasValue)
-            return;
+        if (entity is not IEntityTimestamp timestampedEntity)
+            throw new InvalidOperationException("Entity must implement IEntityTimestamp for soft delete.");
 
-        entity.DeletedDate = DateTime.UtcNow;
+        //Ana entity'yi soft-delete olarak iþaretle
+        timestampedEntity.DeletedDate = DateTime.UtcNow;
+        Context.Update(entity);
+
+        var entry = Context.Entry(entity);
+
+        //Tekil navigation property'ler (HasOne gibi)
+        var referenceNavigations = entry.Navigations
+            .Where(n => !n.Metadata.IsCollection &&
+                        n.Metadata.TargetEntityType.ClrType.GetInterfaces().Contains(typeof(IEntityTimestamp)))
+            .ToList();
+
+        foreach (var nav in referenceNavigations)
+        {
+            // Navigation deðeri zaten yüklenmiþse, kontrol et
+            if (!nav.IsLoaded)
+                await nav.LoadAsync();
+
+            if (nav.CurrentValue is IEntityTimestamp relatedEntity && relatedEntity.DeletedDate == null)
+            {
+                relatedEntity.DeletedDate = DateTime.UtcNow;
+                Context.Update(relatedEntity);
+            }
+        }
+
+        //Koleksiyon navigation property'ler (HasMany gibi)
+        var collectionNavigations = entry.Navigations
+            .Where(n => n.Metadata.IsCollection)
+            .ToList();
+
+        foreach (var collectionNav in collectionNavigations)
+        {
+            if (!collectionNav.IsLoaded)
+                await collectionNav.LoadAsync();
+
+            if (collectionNav.CurrentValue is IEnumerable<object> relatedEntities)
+            {
+                foreach (var related in relatedEntities.OfType<IEntityTimestamp>())
+                {
+                    if (related.DeletedDate == null)
+                    {
+                        related.DeletedDate = DateTime.UtcNow;
+                        Context.Update(related);
+                    }
+                }
+            }
+        }
+
+        await Context.SaveChangesAsync();
     }
 
     protected void CheckHasEntityHaveOneToOneRelation(TEntity entity)
@@ -125,5 +210,28 @@ public class EfRepositoryBase<TEntity, TEntityId, TContext> : IAsyncRepository<T
 
         if (hasEntityHaveOneToOneRelation)
             throw new InvalidOperationException("Entity has one-to-one relation. Soft delete may cause problems if you try to create entry again by same foreign key");
+    }
+
+
+    protected IQueryable<object> GetRelationLoaderQuery(IQueryable query, Type navigationPropertyType)
+    {
+        Type queryProviderType = query.Provider.GetType();
+        MethodInfo createQueryMethod =
+            queryProviderType.GetMethods().
+            First(x => x is { Name: nameof(query.Provider.CreateQuery), IsGenericMethod: true })?
+            .MakeGenericMethod(navigationPropertyType)
+            ?? throw new InvalidOperationException("Could not find CreateQuery method on query provider");
+
+        var queryProviderQuery = (IQueryable<object>)createQueryMethod.Invoke(query.Provider, parameters: [query.Expression])!;
+
+        return queryProviderQuery.Where(x => !((IEntityTimestamp)x).DeletedDate.HasValue);
+    }
+
+    protected async Task SetEntitiesAsDeletedAsync(ICollection<TEntity> entities, bool permanent)
+    {
+        foreach (var entity in entities)
+        {
+            await SetEntityAsDeletedAsync(entity, permanent);
+        }
     }
 }
