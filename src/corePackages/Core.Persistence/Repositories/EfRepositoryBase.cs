@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore.Query;
 
 namespace Core.Persistence.Repositories;
 
-public class EfRepositoryBase<TEntity, TEntityId, TContext> : IAsyncRepository<TEntity, TEntityId>, IRepository<TEntity, TEntityId> where TEntity : Entity<TEntityId> where TContext : DbContext
+public class EfRepositoryBase<TEntity, TEntityId, TContext> : IAsyncRepository<TEntity, TEntityId> where TEntity : Entity<TEntityId> where TContext : DbContext
 {
     protected readonly TContext Context;
 
@@ -67,40 +67,75 @@ public class EfRepositoryBase<TEntity, TEntityId, TContext> : IAsyncRepository<T
         return entities;
     }
 
-    public Task<TEntity> GetAsync(
-        Expression<Func<TEntity, bool>> predicate, 
-        Func<IQueryable<TEntity>, IIncludableQueryable<TEntity, object>> include = null, 
-        bool withDeleted = false, 
-        bool enableTracking = false, 
+    public async Task<TEntity> GetAsync(
+        Expression<Func<TEntity, bool>> predicate,
+        Func<IQueryable<TEntity>, IIncludableQueryable<TEntity, object>> include = null,
+        bool withDeleted = false,
+        bool enableTracking = false,
         CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException();
+        IQueryable<TEntity> queryable = Query();
+
+        if (!enableTracking)
+            queryable = queryable.AsNoTracking();
+        if (include != null)
+            queryable = include(queryable);
+        if (withDeleted)
+            queryable = queryable.IgnoreQueryFilters();
+        if (predicate != null)
+            queryable = queryable.Where(predicate);
+
+        return await queryable.FirstOrDefaultAsync(predicate, cancellationToken);
     }
 
-    public Task<Paginate<TEntity>> GetListAsync(
-        Expression<Func<TEntity, bool>>? predicate = null, 
-        Func<IQueryable<TEntity>, IOrderedQueryable<TEntity>>? orderBy = null, 
-        Func<IQueryable<TEntity>, IIncludableQueryable<TEntity, object>> include = null, 
-        int index = 0, 
-        int size = 10, 
-        bool withDeleted = false, 
-        bool enableTracking = true, 
+    public async Task<Paginate<TEntity>> GetListAsync(
+        Expression<Func<TEntity, bool>>? predicate = null,
+        Func<IQueryable<TEntity>, IOrderedQueryable<TEntity>>? orderBy = null,
+        Func<IQueryable<TEntity>, IIncludableQueryable<TEntity, object>> include = null,
+        int index = 0,
+        int size = 10,
+        bool withDeleted = false,
+        bool enableTracking = true,
         CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException();
+        IQueryable<TEntity> queryable = Query();
+
+        if (!enableTracking)
+            queryable = queryable.AsNoTracking();
+        if (include != null)
+            queryable = include(queryable);
+        if (withDeleted)
+            queryable = queryable.IgnoreQueryFilters();
+        if (predicate != null)
+            queryable = queryable.Where(predicate);
+        if (orderBy != null)
+            return await orderBy(queryable).ToPaginateAsync(index, size, cancellationToken);
+
+        return await queryable.ToPaginateAsync(index, size, cancellationToken);
     }
 
-    public Task<Paginate<TEntity>> GetListDynamicAsync(
-        DynamicQuery dynamic, 
-        Expression<Func<TEntity, bool>>? predicate = null, 
-        Func<IQueryable<TEntity>, IIncludableQueryable<TEntity, object>> include = null, 
-        int index = 0, 
-        int size = 10, 
-        bool withDeleted = false, 
-        bool enableTracking = true, 
+    public async Task<Paginate<TEntity>> GetListDynamicAsync(
+        DynamicQuery dynamic,
+        Expression<Func<TEntity, bool>>? predicate = null,
+        Func<IQueryable<TEntity>, IIncludableQueryable<TEntity, object>> include = null,
+        int index = 0,
+        int size = 10,
+        bool withDeleted = false,
+        bool enableTracking = true,
         CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException();
+        IQueryable<TEntity> queryable = Query().ToDynamic(dynamic);
+
+        if (!enableTracking)
+            queryable = queryable.AsNoTracking();
+        if (include != null)
+            queryable = include(queryable);
+        if (withDeleted)
+            queryable = queryable.IgnoreQueryFilters();
+        if (predicate != null)
+            queryable = queryable.Where(predicate);
+
+        return await queryable.ToPaginateAsync(index, size, cancellationToken);
     }
 
     public IQueryable<TEntity> Query()
@@ -147,7 +182,7 @@ public class EfRepositoryBase<TEntity, TEntityId, TContext> : IAsyncRepository<T
         if (entity is not IEntityTimestamp timestampedEntity)
             throw new InvalidOperationException("Entity must implement IEntityTimestamp for soft delete.");
 
-        //Ana entity'yi soft-delete olarak iþaretle
+        //Ana entity'yi soft-delete olarak iï¿½aretle
         timestampedEntity.DeletedDate = DateTime.UtcNow;
         Context.Update(entity);
 
@@ -161,7 +196,7 @@ public class EfRepositoryBase<TEntity, TEntityId, TContext> : IAsyncRepository<T
 
         foreach (var nav in referenceNavigations)
         {
-            // Navigation deðeri zaten yüklenmiþse, kontrol et
+            // Navigation deï¿½eri zaten yï¿½klenmiï¿½se, kontrol et
             if (!nav.IsLoaded)
                 await nav.LoadAsync();
 
@@ -212,7 +247,6 @@ public class EfRepositoryBase<TEntity, TEntityId, TContext> : IAsyncRepository<T
             throw new InvalidOperationException("Entity has one-to-one relation. Soft delete may cause problems if you try to create entry again by same foreign key");
     }
 
-
     protected IQueryable<object> GetRelationLoaderQuery(IQueryable query, Type navigationPropertyType)
     {
         Type queryProviderType = query.Provider.GetType();
@@ -230,8 +264,6 @@ public class EfRepositoryBase<TEntity, TEntityId, TContext> : IAsyncRepository<T
     protected async Task SetEntitiesAsDeletedAsync(ICollection<TEntity> entities, bool permanent)
     {
         foreach (var entity in entities)
-        {
             await SetEntityAsDeletedAsync(entity, permanent);
-        }
     }
 }
