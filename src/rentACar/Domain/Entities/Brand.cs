@@ -1,4 +1,3 @@
-using System;
 using Core.Persistence.Repositories;
 
 namespace Domain.Entities;

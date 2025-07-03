@@ -1,9 +1,0 @@
-using System;
-using MediatR;
-
-namespace Application.Brands.Commands.Create;
-
-public class CreateBrandCommand : IRequest<CreatedBrandResponse>
-{
-    public string Name { get; set; } = string.Empty;
-}

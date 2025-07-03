@@ -1,4 +1,4 @@
-using Application.Brands.Commands.Create;
+using Application.Features.Brands.Commands.Create;
 using MediatR;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -11,12 +11,10 @@ namespace WebApi.Controllers
     {
 
         [HttpPost]
-        public async Task<IActionResult> CreateBrand([FromBody] CreateBrandCommand command)
+        public async Task<IActionResult> CreateBrand([FromBody] CreateBrandCommand createBrandCommand)
         {
-            var result = await Mediator.Send(command);
-            return result is not null
-                ? Ok(result)
-                : BadRequest("Brand creation failed.");
+            CreatedBrandResponse response = await Mediator.Send(createBrandCommand);
+            return Ok(response);
         }
     }
 }
