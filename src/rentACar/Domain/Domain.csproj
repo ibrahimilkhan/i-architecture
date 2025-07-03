@@ -6,10 +6,4 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
-  <ItemGroup>
-    <Reference Include="Core.Persistence">
-      <HintPath>..\..\corePackages\Core.Persistence\bin\Debug\net8.0\Core.Persistence.dll</HintPath>
-    </Reference>
-  </ItemGroup>
-
 </Project>
