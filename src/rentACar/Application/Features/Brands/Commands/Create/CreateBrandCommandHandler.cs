@@ -1,8 +1,9 @@
-using System;
 using Application.Services.Repositories;
 using AutoMapper;
 using Domain.Entities;
 using MediatR;
+using Microsoft.EntityFrameworkCore;
+using System;
 
 namespace Application.Features.Brands.Commands.Create;
 
@@ -24,8 +25,8 @@ public class CreateBrandCommandHandler : IRequestHandler<CreateBrandCommand, Cre
         brand.Id = Guid.NewGuid();
 
         var result = await _brandRepository.AddAsync(brand);
-
         CreatedBrandResponse response = _mapper.Map<CreatedBrandResponse>(result);
+
         return response;
     }
 }
