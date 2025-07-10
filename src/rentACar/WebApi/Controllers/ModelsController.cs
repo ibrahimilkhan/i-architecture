@@ -1,5 +1,7 @@
 ﻿using Application.Features.Models.Queries.GetList;
+using Application.Features.Models.Queries.GetListByDynamic;
 using Core.Application.Requests;
+using Core.Persistence.Dynamic;
 using Microsoft.AspNetCore.Mvc;
 
 namespace WebApi.Controllers;
@@ -17,11 +19,14 @@ public class ModelsController : BaseController
         return Ok(response);
     }
 
-    [HttpGet("GetList/ByDynamic")]
-    public async Task<IActionResult> GetListByDynamic([FromQuery] PageRequest pageRequest)
+    [HttpPost("GetList/ByDynamic")]
+    public async Task<IActionResult> GetListByDynamic([FromQuery] PageRequest pageRequest, [FromBody] DynamicQuery? dynamicQuery = null)
     {
-        GetListModelQuery getListBrandQuery = new() { PageRequest = pageRequest };
+        GetListByDynamicQuery getListBrandQuery = new() { PageRequest = pageRequest, DynamicQuery = dynamicQuery };
         var response = await Mediator.Send(getListBrandQuery);
+
+
+
         return Ok(response);
     }
 }

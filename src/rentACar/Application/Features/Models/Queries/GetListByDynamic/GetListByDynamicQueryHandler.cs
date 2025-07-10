@@ -20,13 +20,17 @@ public class GetListByDynamicQueryHandler : IRequestHandler<GetListByDynamicQuer
     }
     public async Task<GetListResponse<GetListByDynamicModelListItemDto>> Handle(GetListByDynamicQuery request, CancellationToken cancellationToken)
     {
-        Paginate<Model> models = await _modelRepository.GetListAsync(
-            include: m => m.Include(m => m.Brand).Include(m => m.Fuel).Include(m => m.Transmission),
-            index: request.PageRequest.PageIndex,
-            size: request.PageRequest.PageSize
-            );
+        Paginate<Model> models = await _modelRepository.GetListDynamicAsync(
+             request.DynamicQuery,
+             include: m => m.Include(m => m.Brand).Include(m => m.Fuel).Include(m => m.Transmission),
+             index: request.PageRequest.PageIndex,
+             size: request.PageRequest.PageSize
+             );
 
         var response = _mapper.Map<GetListResponse<GetListByDynamicModelListItemDto>>(models);
+
         return response;
+
+
     }
 }
