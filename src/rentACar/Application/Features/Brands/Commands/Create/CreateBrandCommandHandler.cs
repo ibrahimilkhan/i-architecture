@@ -2,7 +2,6 @@ using Application.Services.Repositories;
 using AutoMapper;
 using Domain.Entities;
 using MediatR;
-using Microsoft.EntityFrameworkCore;
 using System;
 
 namespace Application.Features.Brands.Commands.Create;

@@ -3,9 +3,12 @@ using Persistence;
 
 var builder = WebApplication.CreateBuilder(args);
 
+builder.Configuration.AddJsonFile("secrets.json", optional: true, reloadOnChange: true);
+
+builder.Services.AddPersistenceServices(builder.Configuration);
+
 builder.Services.AddControllers();
 builder.Services.AddApplicationServices();
-builder.Services.AddPersistenceServices(builder.Configuration);
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 

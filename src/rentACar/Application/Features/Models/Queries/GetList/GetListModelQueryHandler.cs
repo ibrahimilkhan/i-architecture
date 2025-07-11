@@ -5,7 +5,7 @@ using Core.Persistence.Paging;
 using Domain.Entities;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Metadata;
+
 
 namespace Application.Features.Models.Queries.GetList;
 

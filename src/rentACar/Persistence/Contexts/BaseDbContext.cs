@@ -1,5 +1,4 @@
-﻿using Domain.Entities;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using System.Reflection;
 
@@ -14,6 +13,7 @@ namespace Persistence.Contexts
             Configuration = configuration;
             Database.EnsureCreated();
         }
+
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
