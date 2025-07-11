@@ -8,8 +8,6 @@
 
   <ItemGroup>
     <Folder Include="Features\Brands\Commands\Delete\" />
-    <Folder Include="Features\Brands\Constants\" />
-    <Folder Include="Features\Brands\Rules\" />
     <Folder Include="Features\Models\Commands\" />
     <Folder Include="Features\Models\Constants\" />
     <Folder Include="Features\Models\Queries\GetById\" />
@@ -29,6 +27,9 @@
   <ItemGroup>
     <Reference Include="Core.Application">
       <HintPath>..\..\corePackages\Core.Application\bin\Debug\net8.0\Core.Application.dll</HintPath>
+    </Reference>
+    <Reference Include="Core.CrossCuttingConcerns">
+      <HintPath>..\..\corePackages\Core.CrossCuttingConcerns\bin\Debug\net8.0\Core.CrossCuttingConcerns.dll</HintPath>
     </Reference>
     <Reference Include="Core.Persistence">
       <HintPath>..\..\corePackages\Core.Persistence\bin\Debug\net8.0\Core.Persistence.dll</HintPath>
