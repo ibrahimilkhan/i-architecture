@@ -12,10 +12,4 @@
     <PackageReference Include="Microsoft.Extensions.Localization.Abstractions" Version="9.0.7" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Reference Include="Core.CrossCuttingConcerns">
-      <HintPath>..\..\corePackages\Core.CrossCuttingConcerns\bin\Debug\net8.0\Core.CrossCuttingConcerns.dll</HintPath>
-    </Reference>
-  </ItemGroup>
-
 </Project>

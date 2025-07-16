@@ -2,5 +2,6 @@
 {
     public class BrandMessage
     {
+        public const string BrandNameExists = "Brand name exists!";
     }
 }

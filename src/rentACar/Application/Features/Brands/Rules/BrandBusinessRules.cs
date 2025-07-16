@@ -1,19 +1,18 @@
 ﻿using Application.Features.Brands.Constants;
 using Application.Services.Repositories;
-using Core.CrossCuttingConcerns.Localization;
+using Core.Application.Rules;
+using Core.CrossCuttingConcerns.Exceptions.Types;
 using Domain.Entities;
 
 namespace Application.Features.Brands.Rules;
 
-public class BrandBusinessRules
+public class BrandBusinessRules : BaseBusinessRules
 {
     private readonly IBrandRepository _brandRepository;
-    private readonly ISharedLocalizationService _sharedLocalizationService;
 
-    public BrandBusinessRules(IBrandRepository brandRepository, ISharedLocalizationService sharedLocalizationService)
+    public BrandBusinessRules(IBrandRepository brandRepository)
     {
         _brandRepository = brandRepository;
-        _sharedLocalizationService = sharedLocalizationService;
     }
 
     public async Task BrandNameCannotBeDuplicatedWhenInserted(string name)
@@ -22,8 +21,7 @@ public class BrandBusinessRules
 
         if (existingBrand != null)
         {
-            var x = _sharedLocalizationService["BrandNameExists"];
-
+            throw new BusinessException(BrandMessage.BrandNameExists);
         }
     }
 }

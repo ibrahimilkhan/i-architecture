@@ -14,7 +14,6 @@ namespace Persistence.Contexts
             Database.EnsureCreated();
         }
 
-
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.ApplyConfigurationsFromAssembly(Assembly.GetExecutingAssembly());
